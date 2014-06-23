@@ -1,0 +1,30 @@
+{
+    "name": "jasny/formbuilder-bootstrap",
+    "description": "Bootstrap decorator for Jasny Form builder",
+    "keywords": ["forms", "bootstrap"],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Arnold Daniels",
+            "email": "arnold@jasny.net",
+            "homepage": "http://www.jasny.net"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/jasny/formbuilder-bootstrap/issues",
+        "source": "https://github.com/jasny/formbuilder-bootstrap"
+    },
+    "require": {
+        "php": ">=5.4.0",
+        "jasny/formbuilder": "dev-master"
+    },
+    "suggests": {
+        "twbs/bootstrap": "The most popular front-end framework",
+        "jasny/bootstrap": "Additional Bootstrap components"
+    },
+    "autoload": {
+        "psr-0": {
+            "Jasny\\FormBuilder\\Bootstrap": "src/"
+        }
+    }
+}
