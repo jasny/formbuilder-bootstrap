@@ -1,10 +1,8 @@
 <?php
 
-namespace Jasny\FormBuilder\Decorator;
+namespace Jasny\FormBuilder;
 
-use Jasny\FormBuilder\Decorator;
-use Jasny\FormBuilder\Element;
-use Jasny\FormBuilder as FB;
+use Jasny\FormBuilder;
 
 /**
  * Render element for use with Bootstrap.
@@ -59,9 +57,9 @@ class Bootstrap extends Decorator
         if (static::isButton($element)) {
             $element->addClass('btn btn-' . ($element->getOption('btn-style') ?: 'default'));
         } elseif (
-            $element instanceof FB\Input && !(in_array($element->getType(), ['checkbox', 'radio'])) ||
-            $element instanceof FB\Textarea ||
-            $element instanceof FB\Select
+            $element instanceof Input && !(in_array($element->getType(), ['checkbox', 'radio'])) ||
+            $element instanceof Textarea ||
+            $element instanceof Select
         ) {
             $element->addClass('form-control');
         }
@@ -81,7 +79,7 @@ class Bootstrap extends Decorator
         
         if ($element->hasClass('btn-labeled')) {
             $html = '<span class="btn-label">' . $html . '</span>';
-        } elseif ($element instanceof FB\Input && !static::isButton($element)) {
+        } elseif ($element instanceof Input && !static::isButton($element)) {
             $html = '<span class="input-group-addon">' . $html . '</span>';
         }
         
@@ -122,7 +120,7 @@ class Bootstrap extends Decorator
      */
     public function renderLabel(Element $element, $html)
     {
-        if ($element instanceof FB\Input && $element->attr['type'] === 'hidden') return $html;
+        if ($element instanceof Input && $element->attr['type'] === 'hidden') return $html;
         
         $class = $element->getOption('container') ? 'control-label' : '';
 
@@ -131,7 +129,7 @@ class Bootstrap extends Decorator
             $class = ltrim($class . " " . $grid['label']);
         }
         
-        $required = $element instanceof FB\Control && $element->getAttr('required') ?
+        $required = $element instanceof Control && $element->getAttr('required') ?
             $element->getOption('required-suffix') : '';
         
         if ($class) $class = 'class="' . $class . '"';
@@ -170,7 +168,7 @@ class Bootstrap extends Decorator
         if ($element->hasClass('btn-labeled')) $html = $el;
         
         // Input group for prepend/append
-        $useInputGroup = $element instanceof FB\Input && !self::isButton($element) &&
+        $useInputGroup = $element instanceof Input && !self::isButton($element) &&
             ($element->getOption('prepend') != '' || $element->getOption('append') != '') &&
             $element->getOption('label') !== 'inside';
         
@@ -178,7 +176,7 @@ class Bootstrap extends Decorator
         
         // Grid for horizontal form
         $grid = $element->getOption('grid');
-        if ($grid && $element->getOption('container') && !$element instanceof FB\Group) {
+        if ($grid && $element->getOption('container') && !$element instanceof Group) {
             $class = $grid['control'];
             if ($element->getOption('label') !== true) {
                 $class .= " " . preg_replace('/-(\d+)\b/', '-offset-$1', $grid['label']);
@@ -205,7 +203,7 @@ class Bootstrap extends Decorator
         $html = ($label ? $label . "\n" : '') . $field;
         
         // Add error
-        $error = $element instanceof FB\Control ? $element->getError() : null;
+        $error = $element instanceof Control ? $element->getError() : null;
         if ($error) $html .= "\n<span class=\"help-block error\">{$error}</span>";
         
         // Put everything in a container
@@ -227,8 +225,8 @@ class Bootstrap extends Decorator
     protected static function isButton($element)
     {
         return
-            $element instanceof FB\Button ||
-            ($element instanceof FB\Input && in_array($element->attr['type'], ['button', 'submit', 'reset'])) ||
+            $element instanceof Button ||
+            ($element instanceof Input && in_array($element->attr['type'], ['button', 'submit', 'reset'])) ||
             $element->hasClass('btn') ||
             $element->getOption('btn-style');
     }
@@ -241,9 +239,9 @@ class Bootstrap extends Decorator
      */
     public static function register()
     {
-        FB::$decorators['bootstrap'] = ['Jasny\FormBuilder\Decorator\Bootstrap'];
+        FormBuilder::$decorators['bootstrap'] = ['Jasny\FormBuilder\Bootstrap'];
 
-        FB::$elements += [
+        FormBuilder::$elements += [
             'bootstrap/fileinput' =>  ['Jasny\FormBuilder\Bootstrap\Fileinput'],
             'bootstrap/imageinput' => ['Jasny\FormBuilder\Bootstrap\Imageinput']
         ];
