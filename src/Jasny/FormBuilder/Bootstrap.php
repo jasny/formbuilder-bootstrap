@@ -21,6 +21,7 @@ class Bootstrap extends Decorator
      */
     public static $defaultFontset = 'glyphicon';
     
+    
     /**
      * Class constructor
      * 
@@ -229,8 +230,7 @@ class Bootstrap extends Decorator
             ($element instanceof Input && in_array($element->attr['type'], ['button', 'submit', 'reset'])) ||
             $element->hasClass('btn') ||
             $element->getOption('btn-style');
-    }
-    
+    }    
     
     /**
      * Register Boostrap decorator and elements
