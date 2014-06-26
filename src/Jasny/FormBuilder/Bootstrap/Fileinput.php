@@ -2,14 +2,14 @@
 
 namespace Jasny\FormBuilder\Bootstrap;
 
-use Jasny\FormBuilder as Base;
+use Jasny\FormBuilder\Control;
 
 /**
  * Representation of a Jasny Bootstrap file upload widget.
  * 
  * @link http://jasny.github.io/bootstrap/javascript/#fileinput
  */
-class Fileinput extends Base\BaseControl
+class Fileinput extends Control
 {
     static public $buttons = array(
         'select' => "Select file",
