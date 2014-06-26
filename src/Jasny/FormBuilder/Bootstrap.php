@@ -179,6 +179,15 @@ class Bootstrap extends Decorator
         
         if ($useInputGroup) $html = '<div class="input-group">' . "\n" . $html . "\n</div>";
         
+        // Add help block
+        $help = $element->getOption('help');
+        if ($help) $html .= "\n<span class=\"help-block\">{$help}</span>";
+        
+        // Add error
+        $error = $element instanceof Control ? $element->getError() : null;
+        if ($error) $html .= "\n<span class=\"help-block error\">{$error}</span>";
+        
+        
         // Grid for horizontal form
         $grid = $element->getOption('grid');
         if ($grid && $element->getOption('container') && !$element instanceof Group) {
@@ -205,11 +214,8 @@ class Bootstrap extends Decorator
     {
         if (!$element->getOption('container')) return $html;
         
-        $html = ($label ? $label . "\n" : '') . $field;
-        
-        // Add error
         $error = $element instanceof Control ? $element->getError() : null;
-        if ($error) $html .= "\n<span class=\"help-block error\">{$error}</span>";
+        $html = ($label ? $label . "\n" : '') . $field;
         
         // Put everything in a container
         if ($element->getOption('container')) {
