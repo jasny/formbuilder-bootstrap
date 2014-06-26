@@ -56,7 +56,8 @@ class Bootstrap extends Decorator
     {
         // Add boostrap style class
         if (static::isButton($element)) {
-            $element->addClass('btn btn-' . ($element->getOption('btn-style') ?: 'default'));
+            $style = $element->getOption('btn') ?: 'default';
+            $element->addClass('btn' . preg_replace('/^|\s+/', ' btn-', $style));
         } elseif (
             $element instanceof Input && !(in_array($element->getType(), ['checkbox', 'radio'])) ||
             $element instanceof Textarea ||
@@ -70,18 +71,21 @@ class Bootstrap extends Decorator
     /**
      * Render prepend or append HTML.
      * 
+     * @param string  $placement
      * @param Element $element
-     * @param string  $html     Original rendered html
+     * @param string  $html       Original rendered html
      * @return string
      */
-    protected function renderAddon(Element $element, $html)
+    protected function renderAddon($placement, Element $element, $html)
     {
         if (empty($html)) return $html;
         
-        if ($element->hasClass('btn-labeled')) {
-            $html = '<span class="btn-label">' . $html . '</span>';
+        if (static::isButton($element) && $element->hasClass('btn-labeled')) {
+            $class = "btn-label" . ($placement === 'append' ? ' btn-label-right' : '');
+            $html = '<span class="' . $class . '">' . $html . '</span>';
         } elseif ($element instanceof Input && !static::isButton($element)) {
-            $html = '<span class="input-group-addon">' . $html . '</span>';
+            $class = self::isButton($html) ? 'input-group-btn' : 'input-group-addon';
+            $html = '<span class="' . $class . '">' . $html . '</span>';
         }
         
         return $html;
@@ -96,7 +100,7 @@ class Bootstrap extends Decorator
      */
     public function renderPrepend(Element $element, $html)
     {
-        return $this->renderAddon($element, $html);
+        return $this->renderAddon('prepend', $element, $html);
     }
     
     /**
@@ -108,7 +112,7 @@ class Bootstrap extends Decorator
      */
     public function renderAppend(Element $element, $html)
     {
-        return $this->renderAddon($element, $html);
+        return $this->renderAddon('append', $element, $html);
     }
     
     
@@ -175,6 +179,15 @@ class Bootstrap extends Decorator
         
         if ($useInputGroup) $html = '<div class="input-group">' . "\n" . $html . "\n</div>";
         
+        // Add help block
+        $help = $element->getOption('help');
+        if ($help) $html .= "\n<span class=\"help-block\">{$help}</span>";
+        
+        // Add error
+        $error = $element instanceof Control ? $element->getError() : null;
+        if ($error) $html .= "\n<span class=\"help-block error\">{$error}</span>";
+        
+        
         // Grid for horizontal form
         $grid = $element->getOption('grid');
         if ($grid && $element->getOption('container') && !$element instanceof Group) {
@@ -201,11 +214,8 @@ class Bootstrap extends Decorator
     {
         if (!$element->getOption('container')) return $html;
         
-        $html = ($label ? $label . "\n" : '') . $field;
-        
-        // Add error
         $error = $element instanceof Control ? $element->getError() : null;
-        if ($error) $html .= "\n<span class=\"help-block error\">{$error}</span>";
+        $html = ($label ? $label . "\n" : '') . $field;
         
         // Put everything in a container
         if ($element->getOption('container')) {
@@ -225,6 +235,8 @@ class Bootstrap extends Decorator
      */
     protected static function isButton($element)
     {
+        if (!$element instanceof Element) return false;
+        
         return
             $element instanceof Button ||
             ($element instanceof Input && in_array($element->attr['type'], ['button', 'submit', 'reset'])) ||
