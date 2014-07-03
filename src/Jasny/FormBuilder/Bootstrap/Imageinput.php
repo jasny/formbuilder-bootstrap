@@ -30,7 +30,7 @@ class Imageinput extends Fileinput
      * @param array $attr
      * @return string
      */
-    protected function renderElement()
+    public function renderElement()
     {
         $hidden = null;
         $name = htmlentities($this->getName());
