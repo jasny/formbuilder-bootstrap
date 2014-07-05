@@ -123,7 +123,7 @@ class Bootstrap extends Decorator
         $label = $element->getLabel();
         
         $label->addClass(\Closure::bind(function() {
-            return $this->getOption('container') ? 'control-label' : null;
+            return $this->getOption('label') !== 'inside' ? 'control-label' : null;
         }, $element));
         
         $label->addClass(\Closure::bind(function() {
@@ -276,7 +276,7 @@ class Bootstrap extends Decorator
             $element instanceof Button ||
             ($element instanceof Input && in_array($element->attr['type'], ['button', 'submit', 'reset'])) ||
             $element->hasClass('btn') ||
-            $element->getOption('btn-style');
+            $element->getOption('btn');
     }    
     
     /**
