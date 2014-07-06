@@ -56,11 +56,13 @@ class Bootstrap extends Decorator
     {
         $this->applyToElement($element);
         
-        $this->applyToAddon('prepend', $element);
-        $this->applyToAddon('append', $element);
-        $this->applyToLabel($element);
-        
-        $this->applyToContainer($element);
+        if ($element instanceof WithComponents) {
+            $this->applyToAddon('prepend', $element);
+            $this->applyToAddon('append', $element);
+            $this->applyToLabel($element);
+
+            $this->applyToContainer($element);
+        }
     }
     
     /**
@@ -81,6 +83,16 @@ class Bootstrap extends Decorator
         ) {
             $element->addClass('form-control');
         }
+        
+        if ($element instanceof Input && !static::isButton($element)) {
+            $element->newComponent('input-group', 'div', [], ['class'=>'input-group']);
+        }
+        
+        if ($element instanceof WithComponents) {
+            $element->newComponent('help', 'span', [], ['class'=>'help-block'])->setContent(\Closure::bind(function() {
+                return $this->getOption('help');
+            }, $element));
+        }
     }
 
     /**
@@ -92,10 +104,7 @@ class Bootstrap extends Decorator
      */
     protected function applyToAddon($placement, Element $element)
     {
-        $fn = 'get' . $placement;
-        if (!method_exists($element, $fn)) return;
-        
-        $addon = $element->$fn();
+        $addon = $element->getComponent($placement);
         
         if (static::isButton($element)) {
             $class = "btn-label" . ($placement === 'append' ? " btn-label-right" : '');
@@ -117,10 +126,8 @@ class Bootstrap extends Decorator
      */
     public function applyToLabel(Element $element)
     {
-        if (!method_exists($element, 'getLabel')) return;
-        if ($element instanceof Input && $element->attr['type'] === 'hidden') return;
-        
-        $label = $element->getLabel();
+        $label = $element->getComponent('label');
+        if (!$label || $element instanceof Input && $element->attr['type'] === 'hidden') return;
         
         $label->addClass(\Closure::bind(function() {
             return $this->getOption('label') !== 'inside' ? 'control-label' : null;
@@ -139,9 +146,8 @@ class Bootstrap extends Decorator
      */
     public function applyToContainer(Element $element)
     {
-        if (!method_exists($element, 'getContainer')) return;
-        
-        $container = $element->getContainer();
+        $container = $element->getComponent('container');
+        if (!$container) return;
         
         $container->addClass('form-group');
         
@@ -162,10 +168,10 @@ class Bootstrap extends Decorator
     {
         if (static::isButton($element) && $element->hasClass('btn-labeled')) {
             $prepend = $element->getOption('prepend');
-            if ($prepend) $html = $element->getPrepend()->setContent($prepend) . $html;
+            if ($prepend) $html = $element->getComponent('prepend')->setContent($prepend) . $html;
             
             $append = $element->getOption('append');
-            if ($append) $html = $element->getPrepend()->setContent($append) . $html;
+            if ($append) $html = $element->getComponent('append')->setContent($append) . $html;
         }
         
         return $html;
@@ -180,32 +186,26 @@ class Bootstrap extends Decorator
      */
     public function render(Element $element, $html)
     {
-        if (!method_exists($element, 'getContainer')) return $html;
+        if (!$element instanceof withComponents) return $html;
         
-        $container = $element->getContainer()->clear();
+        $container = $element->getComponent('container')->setContent(null);
         
         // Label
-        if (method_exists($element, 'getLabel') && $element->getOption('label')) {
-            if ($element->getOption('label') !== 'inside') {
-                $label = $element->getLabel()->setContent($element->getDescription());
-                $label->setAttr('for', $element->getId());
-            }
-        }
-        if (isset($label)) $container->add($label);
+        $optLabel = method_exists($element, 'getLabel') ? $element->getOption('label') : null;
+        if ($optLabel && $optLabel !== 'inside') $container->add($element->getComponent('label'));
 
         // Grid for horizontal form
-        $grid = $element->getOption('grid');
-        if ($grid) {
-            $div = $container->begin('div')->addClass($grid[1]);
-            if (!isset($label)) {
-                $div->addClass(preg_replace('/-(\d+)\b/', '-offset-$1', $grid[0]));
+        $optGrid = $element->getOption('grid');
+        if ($optGrid) {
+            $grid = $element->newComponent(null, 'div', [], ['class'=>$optGrid[1]]);
+            if (!$optLabel || $optLabel === 'inside') {
+                $grid->addClass(preg_replace('/-(\d+)\b/', '-offset-$1', $optGrid[0]));
             }
-        } else {
-            $div = $container;
+            $container->add($grid);
         }
         
         // Add form-control elements
-        $this->renderControl($element, $div);
+        $this->renderControl($element, isset($grid) ? $grid : $container);
         
         // Validation script
         if (method_exists($element, 'getValidationScript')) {
@@ -224,35 +224,35 @@ class Bootstrap extends Decorator
     protected function renderControl(Element $element, Group $container)
     {
         // Input group for prepend/append
-        $useInputGroup = $element instanceof Input && !self::isButton($element) &&
+        $useInputGroup = $element->getComponent('input-group') &&
             ($element->getOption('prepend') != '' || $element->getOption('append') != '') &&
             $element->getOption('label') !== 'inside';
         
-        $fc = $useInputGroup ? $container->begin('div', [], ['class'=>'input-group']) : $container;
+        if ($useInputGroup) {
+            $group = $element->getComponent('input-group');
+            $container->add($group);
+        } else {
+            $group = $container; // Or just use container
+        }
         
         // Prepend
         $labeledButton = static::isButton($element) && $element->hasClass('btn-labeled');
-        if (!$labeledButton) {
-            $prepend = $element->getOption('prepend');
-            if ($prepend) $fc->add($element->getPrepend()->setContent($prepend));
-        }
+        if (!$labeledButton && $element->getOption('prepend')) $group->add($element->getComponent('prepend'));
         
         // Element
         $el = $element->renderElement();
         if ($element->getOption('label') === 'inside') {
-            $el = $element->getLabel()->setAttr('for', null)->setContent($el);
+            $el = $element->getComponent('label')->setContent($el);
         }
-        $fc->add($el);
+        $group->add($el);
         
         // Append
-        if (!$labeledButton) {
-            $append = $element->getOption('append');
-            if ($append) $fc->add($element->getAppend()->setContent($append));
-        }
+        if (!$labeledButton && $element->getOption('append')) $group->add($element->getComponent('append'));
         
         // Help block
-        $help = $element->getOption('help');
-        if ($help) $container->begin('span', [], ['class'=>'help-block'])->setContent($help);
+        if ($element->getComponent('help') && $element->getOption('help')) {
+            $container->add($element->getComponent('help'));
+        }
         
         // Error
         if (method_exists($element, 'getError')) {
